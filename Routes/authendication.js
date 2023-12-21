@@ -3,112 +3,71 @@ const model = require("../Models/authendication");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
-const generateToken = require('../genToken');
+const generateToken = require("../genToken");
 const router = express.Router();
+const verifyToken =require('../middleware')
 
 router.get("/users", async (req, res) => {
-  const user = await model.find();
-  if (!user) {
-    return res.status(404).json({ message: "not found" });
+  try {
+    const users = await model.find();
+    if (!users || users.length === 0) {
+      return res.status(404).json({ message: "Users not found" });
+    }
+    res.status(200).json(users);
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
-  res.status(200).json(user);
 });
 
 router.post("/signup", async (req, res) => {
-  const { Name, Email, Password } = req.body;
-  const user = await model.findOne({ Email });
-  if (!user) {
+  try {
+    const { Name, Email, Password } = req.body;
+    const existingUser = await model.findOne({ Email });
+
+    if (existingUser) {
+      return res.status(409).json({ message: "User already exists" });
+    }
+
     const hashedPassword = await bcrypt.hash(Password, 10);
-
     const newUser = new model({ Name, Email, Password: hashedPassword });
-
     await newUser.save();
 
-    return res.status(201).json({ message: "user Created" });
+    return res.status(201).json({ message: "User created successfully" });
+  } catch (error) {
+    console.error("Error creating user:", error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
-  res.status(404).json({ message: "user Already exist" });
 });
 
 router.post("/login", async (req, res) => {
-  const { Email, Password } = req.body;
-
-  const user = await model.findOne({ Email });
-
-  if (!user) {
-    return res.status(404).json({ message: "Incorrect email or password" });
-  }
-
-  const passwordValidate = await bcrypt.compare(Password, user.Password);
-
-  if (!passwordValidate) {
-    return res.status(404).json({ message: "Incorrect email or password" });
-  }
-
-  const token = generateToken(user._id);
-  res.json({ user, token });
-});
-
-router.post("/resetpassword", async (req, res) => {
-  const { Email } = req.body;
-  const user = await model.findOne({ Email });
-  if (!user) {
-    return res.status(404).json({ message: "User not found" });
-  }
-
-  const resetToken = jwt.sign({ Id: user._id }, process.env.SECRET_KEY, {
-    expiresIn: "1h",
-  });
-
-  // Send reset token via email
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.EMAIL,
-      pass: process.env.PASSWORD,
-    },
-  });
-
-  const mailOptions = {
-    from: process.env.EMAIL,
-    to: user.Email,
-    subject: "Password Reset",
-    text: `HI ${user.Name},
-    There was a request to change your password!
-    If you did not make this request, please ignore this email.
-    Otherwise, please click this link to change your password: https://main--extraordinary-lollipop-156693.netlify.app/save-new-password/${resetToken}`,
-  };
-
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.log("Error sending email:", error);
-      return res.status(500).json({ message: "Error sending email" });
-    }
-    console.log("Reset token email sent:", info.response);
-    res.status(200).json({ message: "Password reset token sent", resetToken });
-  });
-});
-
-router.post("/savepassword", async (req, res) => {
-  const { NewPassword, resetToken } = req.body;
-  // Verify reset token
   try {
-    const decoded = jwt.verify(resetToken, process.env.SECRET_KEY);
-
-    const userId = decoded.Id;
-    const user = await model.findById(userId);
+    const { Email, Password } = req.body;
+    const user = await model.findOne({ Email });
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: "Incorrect email or password" });
     }
 
-    const hashedNewPassword = await bcrypt.hash(NewPassword, 10);
-    user.Password = hashedNewPassword;
-    await user.save();
+    const passwordValidate = await bcrypt.compare(Password, user.Password);
 
-    res.status(200).json({ message: "Password updated successfully" });
+    if (!passwordValidate) {
+      return res.status(404).json({ message: "Incorrect email or password" });
+    }
+
+    const token = generateToken(user._id);
+    res.json({ user, token });
   } catch (error) {
-    console.log("Error verifying reset token:", error);
-    res.status(400).json({ message: "Invalid reset token" });
+    console.error("Error logging in:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+router.get("/verify", verifyToken, async (req, res) => {
+  try {
+      res.send(true);
+  } catch (error) {
+      return res.status(500).json({ msg: error.message });
   }
 });
 
