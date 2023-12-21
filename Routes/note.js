@@ -18,7 +18,7 @@ router.post("/post", async (req, res) => {
   try {
     const { title, content, date } = req.body;
 
-    if (!title || !content || date) {
+    if (!title || !content || !date) {
       return res.status(400).send("Title and content are required");
     }
 
