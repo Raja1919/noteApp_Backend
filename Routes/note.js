@@ -5,7 +5,7 @@ const Note = require("../Models/note");
 // Get all notes
 router.get("/get", async (req, res) => {
   try {
-    const notes = await Note.find({ user_id: req.user.id });
+    const notes = await Note.find();
     res.json(notes);
   } catch (error) {
     console.error("Error reading notes:", error);
