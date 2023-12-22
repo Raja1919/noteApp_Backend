@@ -6,7 +6,7 @@ const Note = require("../Models/note");
 router.get("/get", async (req, res) => {
   try {
     const notes = await Note.find();
-    res.json(notes);
+    res.status(200).json(notes);
   } catch (error) {
     console.error("Error reading notes:", error);
     res.status(500).send("Internal Server Error");
@@ -24,7 +24,7 @@ router.post("/post", async (req, res) => {
 
     const newNote = new Note({ title, content, date });
     await newNote.save();
-    res.json({ msg: "Created a Note" });
+    res.status(200).json({ msg: "Created a Note" });
   } catch (error) {
     console.error("Error adding note:", error);
     res.status(500).send("Internal Server Error");
@@ -50,7 +50,7 @@ router.put("/update/:id", async (req, res) => {
       return res.status(404).send("Note not found");
     }
 
-    res.json({ msg: "Updated a Note" });
+    res.status(200).json({ msg: "Updated a Note" });
   } catch (error) {
     console.error("Error updating note:", error);
     res.status(500).send("Internal Server Error");
@@ -66,7 +66,7 @@ router.delete("/delete/:id", async (req, res) => {
       return res.status(404).send("Note not found");
     }
 
-    res.json({ msg: "Deleted a Note" });
+    res.status(200).json({ msg: "Deleted a Note" });
   } catch (error) {
     console.error("Error deleting note:", error);
     res.status(500).send("Internal Server Error");
@@ -82,14 +82,11 @@ router.get("/get/:id", async (req, res) => {
       return res.status(404).json({ msg: "Note not found" });
     }
 
-    res.json(note);
+    res.status(200).json(note);
   } catch (error) {
     console.error("Error reading note:", error);
     res.status(500).send("Internal Server Error");
   }
 });
-
-module.exports = router;
-
 
 module.exports = router;
