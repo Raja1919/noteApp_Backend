@@ -36,10 +36,6 @@ router.put("/update/:id", async (req, res) => {
   try {
     const { title, content, date } = req.body;
 
-    if (!title || !content || date) {
-      return res.status(400).send("Title and content are required");
-    }
-
     const updatedNote = await Note.findByIdAndUpdate(
       req.params.id,
       { title, content, date },
