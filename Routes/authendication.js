@@ -72,7 +72,7 @@ router.post("/login", async (req, res) => {
 
 router.get("/verify", verifyToken, async (req, res) => {
   try {
-    res.send(true);
+    res.status(200).send(true);
   } catch (error) {
     return res.status(500).json({ msg: error.message });
   }
